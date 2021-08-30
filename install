@@ -1,0 +1,88 @@
+#! /usr/local/bin/bash
+
+
+declare -r source_dir="$(dirname "$(greadlink -f "${BASH_SOURCE}")")"
+
+declare -A dotfiles=(
+  [.aliases]="${HOME}"
+  [.amzn_aliases]="${HOME}"
+  [.profile]="${HOME}"
+  [.vimrc]="${HOME}"
+  [.bashrc]="${HOME}"
+  [.gitconfig]="${HOME}"
+  [.git-prompt.sh]="${HOME}"
+)
+
+declare -r PACKAGES=(
+  "bash-preexec"
+  "go"
+  "python"
+  "byobu"
+  "htop"
+  "macvim"
+  "zip"
+  "unzip"
+  "safe-rm"
+  "httpie"
+  "rbenv"
+  "ruby-build"
+  "gpg"
+  "node@12"
+  "node@14"
+  "jq"
+  "socat"
+  "speedtest-cli"
+  "duf"
+  "awscli@2"
+)
+
+##declare -r CASK_PACKAGES=(
+##  "paw"
+##)
+
+function install_dotfile() {
+  local dotfile="$1"
+  local install_path=$(dirname "$2/$dotfile")
+  mkdir -p "${install_path}"
+  local cmd=(ln -fs "${source_dir%%/}/files/${dotfile}" "${install_path%%/}/${dotfile}")
+  echo "!installing ${dotfile}: ${cmd[@]}"
+  "${cmd[@]}"
+}
+
+function brew_install {
+    if brew ls --versions "$1" >/dev/null; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew upgrade "$1"
+    else
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install "$1"
+    fi
+}
+
+function brew_cask_install {
+    if brew ls --versions "$1" >/dev/null; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask "$1"
+    else
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask "$1"
+    fi
+}
+
+
+function main() {
+  for dotfile in "${!dotfiles[@]}"; do
+    install_dotfile "${dotfile}" "${dotfiles[$dotfile]}"
+  done;
+
+  for pkg in "${PACKAGES[@]}"
+  do
+    :
+    brew_install $pkg
+  done
+  for pkg in "${CASK_PACKAGES[@]}"
+  do
+    :
+    brew_cask_install $pkg
+  done
+  vim +BundleInstall
+  bash
+}
+
+main "${@}"
